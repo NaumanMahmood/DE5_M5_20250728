@@ -1,5 +1,23 @@
 import pandas as pd
+import numpy as np
 from pathlib import Path
+
+
+def period_to_days(period_str):
+    if pd.isna(period_str):
+        return np.nan
+    period_str = period_str.lower().strip()
+    
+    number = int(''.join(filter(str.isdigit, period_str)))  # extract number
+    
+    if "week" or "weeks" in period_str:
+        return number * 7
+    elif "month" or "months" in period_str:
+        return number * 30  # Approximate month as 30 days
+    elif "day" or "days" in period_str:
+        return number
+    else:
+        return np.nan  # unknown format
 
 # Define the path to your data folder
 data_path = Path("C:/Users/Admin/Desktop/DE5_M5_20250728/python_app/data")
@@ -30,6 +48,8 @@ df2 = df2.fillna("Unknown")
 df1 = df1.applymap(lambda x: x.strip() if isinstance(x, str) else x)
 df2 = df2.applymap(lambda x: x.strip() if isinstance(x, str) else x)
 
+# Step 2.1: extra cleaning
+
 # Remove quotes and convert to datetime
 df1['book_checkout'] = (
     df1['book_checkout']
@@ -42,6 +62,13 @@ df1['book_checkout'] = (
 # Convert to datetime
 df1['book_checkout'] = pd.to_datetime(df1['book_checkout'], errors='coerce')
 df1['book_returned'] = pd.to_datetime(df1['book_returned'], errors='coerce')
+
+df1['days_int'] = df1['days_allowed_to_borrow'].apply(period_to_days)
+
+df1['book_checkout'] = df1.apply(
+    lambda row: row['book_returned'] - pd.Timedelta(days=row['days_int']) if pd.isna(row['book_checkout']) else row['book_checkout'],
+    axis=1
+)
 
 # Example: convert ID columns to integer
 df1['id'] = pd.to_numeric(df1['id'], errors='coerce').astype('Int64')

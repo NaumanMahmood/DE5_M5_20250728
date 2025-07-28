@@ -1,22 +1,22 @@
-id,books,book_checkout,book_returned,days_allowed_to_borrow,customer_id
-1,Catcher in the Rye,2023-02-20,2023-02-25,2 weeks,1
-2,Lord of the rings the two towers,2023-03-24,2023-03-21,2 weeks,2
-3,Lord of the rings the return of the kind,2023-03-29,2023-03-25,2 weeks,3
-4,The hobbit,2023-04-02,2023-03-25,2 weeks,4
-5,Dune,2023-04-02,2023-03-25,2 weeks,5
-6,Little Women,2023-04-02,2023-05-01,2 weeks,1
-7,IT,2063-04-10,2023-04-03,2 weeks,6
-8,Misery,2023-04-15,2023-04-03,2 weeks,7
-9,Catch 22,2023-04-15,2023-04-16,2 weeks,7
-10,Animal Farm,2023-04-20,2023-04-24,2 weeks,2
-11,1984,2023-04-23,2023-04-27,2 weeks,8
-12,Little Women,2023-04-02,2023-05-01,2 weeks,1
-13,East of Eden,2023-04-30,2023-05-05,2 weeks,2
-14,America Is in the Heart,2023-05-01,2023-05-07,2 weeks,3
-15,Wuthering Heights,2023-05-01,2023-05-10,2 weeks,9
-16,Dark Tales,2023-05-15,2023-06-01,2 weeks,2
-17,The Bloody Chamber,,2023-06-04,2 weeks,3
-18,Les Miserables,2023-06-03,2023-06-07,2 weeks,5
-19,Dracula,2023-06-10,2023-07-10,2 weeks,10
-20,Frankenstein,2023-06-01,2023-06-20,2 weeks,2
-21,Unknown,2023-06-01,2023-06-05,2 weeks,
+id,books,book_checkout,book_returned,days_allowed_to_borrow,customer_id,days_int
+1,Catcher in the Rye,2023-02-20,2023-02-25,2 weeks,1,14
+2,Lord of the rings the two towers,2023-03-24,2023-03-21,2 weeks,2,14
+3,Lord of the rings the return of the kind,2023-03-29,2023-03-25,2 weeks,3,14
+4,The hobbit,2023-04-02,2023-03-25,2 weeks,4,14
+5,Dune,2023-04-02,2023-03-25,2 weeks,5,14
+6,Little Women,2023-04-02,2023-05-01,2 weeks,1,14
+7,IT,2063-04-10,2023-04-03,2 weeks,6,14
+8,Misery,2023-04-15,2023-04-03,2 weeks,7,14
+9,Catch 22,2023-04-15,2023-04-16,2 weeks,7,14
+10,Animal Farm,2023-04-20,2023-04-24,2 weeks,2,14
+11,1984,2023-04-23,2023-04-27,2 weeks,8,14
+12,Little Women,2023-04-02,2023-05-01,2 weeks,1,14
+13,East of Eden,2023-04-30,2023-05-05,2 weeks,2,14
+14,America Is in the Heart,2023-05-01,2023-05-07,2 weeks,3,14
+15,Wuthering Heights,2023-05-01,2023-05-10,2 weeks,9,14
+16,Dark Tales,2023-05-15,2023-06-01,2 weeks,2,14
+17,The Bloody Chamber,2023-05-21,2023-06-04,2 weeks,3,14
+18,Les Miserables,2023-06-03,2023-06-07,2 weeks,5,14
+19,Dracula,2023-06-10,2023-07-10,2 weeks,10,14
+20,Frankenstein,2023-06-01,2023-06-20,2 weeks,2,14
+21,Unknown,2023-06-01,2023-06-05,2 weeks,,14
