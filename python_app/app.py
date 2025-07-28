@@ -2,6 +2,8 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 
+def format_book_title(title):
+    return title if title.isupper() else title.title()
 
 def period_to_days(period_str):
     if pd.isna(period_str):
@@ -28,17 +30,20 @@ df2 = pd.read_csv(data_path / "03_Library SystemCustomers.csv")
 
 # Step 2: Clean the data
 
-# Clean column names for both DataFrames
-df1.columns = df1.columns.str.strip().str.lower().str.replace(" ", "_")
-df2.columns = df2.columns.str.strip().str.lower().str.replace(" ", "_")
-
 # Drop duplicates
 df1 = df1.drop_duplicates()
 df2 = df2.drop_duplicates()
 
+# Clean column names for both DataFrames
+df1.columns = df1.columns.str.strip().str.lower().str.replace(" ", "_")
+df2.columns = df2.columns.str.strip().str.lower().str.replace(" ", "_")
+
 # Drop rows with all missing values
 df1 = df1.dropna(how='all')
 df2 = df2.dropna(how='all')
+
+# Drop missing customer id rows
+df1 = df1.dropna(subset=["customer_id"])
 
 # Fill missing values with placeholder
 df1 = df1.fillna("Unknown")
@@ -77,10 +82,23 @@ df1['book_checkout'] = df1.apply(
     axis=1
 )
 
-# Example: convert ID columns to integer
+# ID columns to integer
 df1['id'] = pd.to_numeric(df1['id'], errors='coerce').astype('Int64')
 df1['customer_id'] = pd.to_numeric(df1['customer_id'], errors='coerce').astype('Int64')
 df2['customer_id'] = pd.to_numeric(df2['customer_id'], errors='coerce').astype('Int64')
+
+# Title in case
+df1["books"] = df1["books"].apply(format_book_title)
+
+# Drop duplicate entries based on title, checkout and customer
+df1.drop_duplicates(subset=['books', 'book_checkout', 'customer_id'], keep='first', inplace=True)
+
+# Reverse dates where checkout is after return
+mask = df1["book_checkout"] > df1["book_returned"]
+df1.loc[mask, ["book_checkout", "book_returned"]] = df1.loc[mask, ["book_returned", "book_checkout"]].values
+
+# Dropped temp column days
+df1.drop(columns=["days_int"], inplace=True)
 
 # Step 3: Save the cleaned files (to a cleaned/ folder, for example)
 cleaned_path = data_path / "cleaned"
