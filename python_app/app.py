@@ -19,7 +19,7 @@ def period_to_days(period_str):
     else:
         return np.nan  # unknown format
 
-# Define the path to your data folder
+# Define the path to my data folder
 data_path = Path("C:/Users/Admin/Desktop/DE5_M5_20250728/python_app/data")
 
 df1 = pd.read_csv(data_path / "03_Library Systembook.csv")
