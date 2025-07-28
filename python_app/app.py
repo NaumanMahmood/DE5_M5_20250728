@@ -63,10 +63,17 @@ df1['book_checkout'] = (
 df1['book_checkout'] = pd.to_datetime(df1['book_checkout'], errors='coerce')
 df1['book_returned'] = pd.to_datetime(df1['book_returned'], errors='coerce')
 
+# Created a new column with integer day
 df1['days_int'] = df1['days_allowed_to_borrow'].apply(period_to_days)
 
+# Define cutoff date - for example, 1 year from today
+cutoff_date = pd.Timestamp.today() + pd.DateOffset(years=1)
+
+# Fill missing or "too far in future" book_checkout dates by calculation
 df1['book_checkout'] = df1.apply(
-    lambda row: row['book_returned'] - pd.Timedelta(days=row['days_int']) if pd.isna(row['book_checkout']) else row['book_checkout'],
+    lambda row: (row['book_returned'] - pd.Timedelta(days=row['days_int']))
+    if (pd.isna(row['book_checkout']) or row['book_checkout'] > cutoff_date)
+    else row['book_checkout'],
     axis=1
 )
 
