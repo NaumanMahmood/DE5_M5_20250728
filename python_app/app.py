@@ -45,6 +45,7 @@ df1['book_returned'] = pd.to_datetime(df1['book_returned'], errors='coerce')
 
 # Example: convert ID columns to integer
 df1['id'] = pd.to_numeric(df1['id'], errors='coerce').astype('Int64')
+df1['customer_id'] = pd.to_numeric(df1['customer_id'], errors='coerce').astype('Int64')
 df2['customer_id'] = pd.to_numeric(df2['customer_id'], errors='coerce').astype('Int64')
 
 # Step 3: Save the cleaned files (to a cleaned/ folder, for example)
