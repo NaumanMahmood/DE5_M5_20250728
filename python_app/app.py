@@ -2,26 +2,10 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 from sqlalchemy import create_engine, URL
-
 # ---------- Utility Functions ----------
 
 def format_book_title(title):
     return title if title.isupper() else title.title()
-
-def period_to_days(period_str):
-    if pd.isna(period_str):
-        return np.nan
-    period_str = period_str.lower().strip()
-    number = int(''.join(filter(str.isdigit, period_str)))  # extract number
-
-    if "week" in period_str:
-        return number * 7
-    elif "month" in period_str:
-        return number * 30
-    elif "day" in period_str:
-        return number
-    else:
-        return np.nan  # unknown format
 
 def writeMetricsToSQL(dropCount, customer_drop_count, engine):
     metrics = {
@@ -71,7 +55,7 @@ def naCheck(df1, df2):
 
     return df1, df2, dropCount, customer_drop_count
 
-def dateCleaner(df1):
+def dateCleaner(df1, dropCount):
     df1['book_checkout'] = (
         df1['book_checkout']
         .astype(str)
@@ -80,40 +64,31 @@ def dateCleaner(df1):
         .replace('nan', pd.NA)
     )
 
-    df1['book_checkout'] = pd.to_datetime(df1['book_checkout'], errors='coerce')
-    df1['book_returned'] = pd.to_datetime(df1['book_returned'], errors='coerce')
+    df1['book_checkout'] = pd.to_datetime(df1['book_checkout'], format='mixed', errors='coerce')
+    df1['book_returned'] = pd.to_datetime(df1['book_returned'], format='mixed', errors='coerce')
 
-    df1['days_int'] = df1['days_allowed_to_borrow'].apply(period_to_days)
+    df1 = df1.dropna(subset=['book_checkout', 'book_returned'])
 
-    cutoff_date = pd.Timestamp.today() + pd.DateOffset(years=1)
-
-    df1['book_checkout'] = df1.apply(
-        lambda row: (row['book_returned'] - pd.Timedelta(days=row['days_int']))
-        if (pd.isna(row['book_checkout']) or row['book_checkout'] > cutoff_date)
-        else row['book_checkout'],
-        axis=1
-    )
+    dropCount +=1
 
     return df1
 
-def dataEnrich(df1, df2):
-    df1['id'] = pd.to_numeric(df1['id'], errors='coerce').astype('Int64')
-    df1['customer_id'] = pd.to_numeric(df1['customer_id'], errors='coerce').astype('Int64')
-    df2['customer_id'] = pd.to_numeric(df2['customer_id'], errors='coerce').astype('Int64')
+def dataEnrich(na_dropped_data, dropCount):
+    """
+    Enrich the data by computing the loan duration in days
+    and removing invalid records with negative duration.
+    """
+    data_enriched = na_dropped_data.copy()
 
-    df1["books"] = df1["books"].apply(format_book_title)
+    data_enriched['loan_duration'] = (
+        data_enriched['book_returned'] - data_enriched['book_checkout']
+    ).dt.days
 
-    df1.drop_duplicates(subset=['books', 'book_checkout', 'customer_id'], keep='first', inplace=True)
+    valid_loan_data = data_enriched[data_enriched['loan_duration'] >= 0]
 
-    mask = df1["book_checkout"] > df1["book_returned"]
-    df1.loc[mask, ["book_checkout", "book_returned"]] = df1.loc[mask, ["book_returned", "book_checkout"]].values
+    dropCount += len(data_enriched) - len(valid_loan_data)
 
-    # Add derived column: days between checkout and return
-    df1["borrowed_days"] = (df1["book_returned"] - df1["book_checkout"]).dt.days
-
-    df1.drop(columns=["days_int"], inplace=True)
-
-    return df1, df2
+    return valid_loan_data, dropCount
 
 def saveCleanedFiles(df1, df2, path):
     cleaned_path = path / "cleaned"
@@ -137,8 +112,8 @@ if __name__ == "__main__":
     df1, df2 = fileLoader(data_path)
     df1, df2 = duplicateCheck(df1, df2)
     df1, df2, dropCount, customer_drop_count = naCheck(df1, df2)
-    df1 = dateCleaner(df1)
-    df1, df2 = dataEnrich(df1, df2)
+    df1 = dateCleaner(df1, dropCount)
+    df1, dropCount = dataEnrich(df1, dropCount)
     saveCleanedFiles(df1, df2, data_path)
 
     # SQL upload
@@ -152,6 +127,6 @@ if __name__ == "__main__":
         database="DE5_Module5"
     )
     engine = create_engine(connection_url)
-
+    
     addToSQL(df1, df2, engine)
     writeMetricsToSQL(dropCount, customer_drop_count, engine)
