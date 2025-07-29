@@ -23,6 +23,15 @@ def period_to_days(period_str):
     else:
         return np.nan  # unknown format
 
+def writeMetricsToSQL(dropCount, customer_drop_count, engine):
+    metrics = {
+        'Record Loss: Loans': dropCount,
+        'Record Loss: Customers': customer_drop_count
+    }
+    metrics_df = pd.DataFrame([metrics])
+    metrics_df.to_sql('DE_metrics', con=engine, if_exists='replace', index=False)
+    print("DE metrics written to SQL.")
+
 # ---------- Modular Pipeline Steps ----------
 
 def fileLoader(path):
@@ -36,6 +45,10 @@ def duplicateCheck(df1, df2):
     return df1, df2
 
 def naCheck(df1, df2):
+    # Count before
+    loan_records_before = len(df1)
+    customer_records_before = len(df2)
+
     df1.columns = df1.columns.str.strip().str.lower().str.replace(" ", "_")
     df2.columns = df2.columns.str.strip().str.lower().str.replace(" ", "_")
 
@@ -50,7 +63,13 @@ def naCheck(df1, df2):
     df1 = df1.applymap(lambda x: x.strip() if isinstance(x, str) else x)
     df2 = df2.applymap(lambda x: x.strip() if isinstance(x, str) else x)
     
-    return df1, df2
+    # Count after and calculate drops
+    loan_records_after = len(df1)
+    customer_records_after = len(df2)
+    dropCount = loan_records_before - loan_records_after
+    customer_drop_count = customer_records_before - customer_records_after
+
+    return df1, df2, dropCount, customer_drop_count
 
 def dateCleaner(df1):
     df1['book_checkout'] = (
@@ -101,22 +120,13 @@ def saveCleanedFiles(df1, df2, path):
     cleaned_path.mkdir(exist_ok=True)
     df1.to_csv(cleaned_path / "book_cleaned.csv", index=False)
     df2.to_csv(cleaned_path / "customers_cleaned.csv", index=False)
-    print("✅ Cleaning complete. Files saved in 'data/cleaned/'.")
+    print("Cleaning complete. Files saved in 'data/cleaned/'.")
 
-def addToSQL(df1, df2, database="Library"):
-    connection_url = URL.create(
-        "mssql+pyodbc",
-        query={
-            "driver": "ODBC Driver 17 for SQL Server",
-            "trusted_connection": "yes"
-        },
-        host="localhost",
-        database=database
-    )
-    engine = create_engine(connection_url)
+def addToSQL(df1, df2, engine):
+
     df1.to_sql("books", con=engine, if_exists='replace', index=False)
     df2.to_sql("customers", con=engine, if_exists='replace', index=False)
-    print("✅ Data loaded to SQL Server successfully.")
+    print("Data loaded to SQL Server successfully.")
 
 # ---------- Main Execution ----------
 
@@ -126,8 +136,22 @@ if __name__ == "__main__":
     # Step-by-step execution
     df1, df2 = fileLoader(data_path)
     df1, df2 = duplicateCheck(df1, df2)
-    df1, df2 = naCheck(df1, df2)
+    df1, df2, dropCount, customer_drop_count = naCheck(df1, df2)
     df1 = dateCleaner(df1)
     df1, df2 = dataEnrich(df1, df2)
     saveCleanedFiles(df1, df2, data_path)
-    addToSQL(df1, df2)
+
+    # SQL upload
+    connection_url = URL.create(
+        "mssql+pyodbc",
+        query={
+            "driver": "ODBC Driver 17 for SQL Server",
+            "trusted_connection": "yes"
+        },
+        host="localhost",
+        database="DE5_Module5"
+    )
+    engine = create_engine(connection_url)
+
+    addToSQL(df1, df2, engine)
+    writeMetricsToSQL(dropCount, customer_drop_count, engine)
