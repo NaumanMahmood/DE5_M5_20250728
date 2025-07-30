@@ -105,14 +105,11 @@ class bookstore_app:
         self.df1 = valid  # Replace with valid records
 
     def saveCleanedFiles(self):
-        cleaned_path = "data/cleaned"
+        cleaned_path = "/app/output"
         os.makedirs(cleaned_path, exist_ok=True)
         self.df1.to_csv(os.path.join(cleaned_path, "book_cleaned.csv"), index=False)
         self.df2.to_csv(os.path.join(cleaned_path, "customers_cleaned.csv"), index=False)
         print("Cleaning complete. Files saved in 'data/cleaned/'.")
-
-        print(self.df1.head(10))
-        print(self.df2.head(10))
 
     def addToSQL(self):
         self.df1.to_sql("books", con=self.engine, if_exists='replace', index=False)

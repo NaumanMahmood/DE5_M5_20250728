@@ -12,3 +12,4 @@ RUN pip install -r requirements.txt
 
 # On starting, what should the container do...
 ENTRYPOINT ["python", "app.py"]
+#ENTRYPOINT ["python", "app.py", "--mode", "sql"]
