@@ -4,11 +4,11 @@ FROM python:3.12.3
 WORKDIR /app
 
 # Copying the current working dir into the /app folder
-COPY . .
+COPY . /app
 
 # Install dependencies
 RUN pip install -r requirements.txt
 
 
 # On starting, what should the container do...
-ENTRYPOINT ["python", "calculator.py"]
+ENTRYPOINT ["python", "app.py"]

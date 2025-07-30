@@ -111,6 +111,9 @@ class bookstore_app:
         self.df2.to_csv(os.path.join(cleaned_path, "customers_cleaned.csv"), index=False)
         print("Cleaning complete. Files saved in 'data/cleaned/'.")
 
+        print(self.df1.head(10))
+        print(self.df2.head(10))
+
     def addToSQL(self):
         self.df1.to_sql("books", con=self.engine, if_exists='replace', index=False)
         self.df2.to_sql("customers", con=self.engine, if_exists='replace', index=False)
