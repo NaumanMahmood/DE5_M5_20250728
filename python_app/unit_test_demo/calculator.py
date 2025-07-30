@@ -1,3 +1,5 @@
+import pandas as pd
+
 class Calculator:
     def __init__(self, a, b):
         self.a = a
@@ -15,22 +17,23 @@ class Calculator:
     def get_quotient(self):
         return self.a / self.b
 
-    def get_sqrt(self):
-        return self.a**2
+    def get_sqrt(x):
+        return x**0.5
+    
+    def times_table(x, y=10):
+        data = {'Result': [x * i for i in range(1, y+1)]}
+        return pd.DataFrame(data)
 
 if __name__ == "__main__":
-    myCalc = Calculator(a=2, b=5)
+    myCalc = Calculator(a=934, b=34)
     
-    answer1 = myCalc.get_sum()
-    answer2 = myCalc.get_diff()
+    #answer1 = myCalc.get_sum()
+    #answer2 = myCalc.get_diff()
     answer3 = myCalc.get_product()
-    answer4 = myCalc.get_quotient()
+    #answer4 = myCalc.get_quotient()
+    answer5 = Calculator.get_sqrt(25)
 
-    myCalc2 = Calculator(a=5)
-    answer5 = myCalc2.get_sqrt()
+    df = Calculator.times_table(3)
 
-    print(answer1)
-    print(answer2)
-    print(answer3)
-    print(answer4)
-    print(answer5)
+    #print(answer3)
+    print(df)
