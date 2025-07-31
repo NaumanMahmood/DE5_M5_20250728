@@ -6,8 +6,17 @@ import argparse
 
 class bookstore_app:
     def __init__(self, mode='csv'):
-        self.dropCount = 0
-        self.customer_drop_count = 0
+        self.metrics = {
+            'initial_loans': 0,
+            'final_loans': 0,
+            'initial_customers': 0,
+            'final_customers': 0,
+            'na_in_book_checkout': 0,
+            'na_in_book_returned': 0,
+            'invalid_loan_duration_count': 0,
+            'loan_duplicates_removed': 0,
+            'customer_duplicates_removed': 0,
+        }
         self.df1 = None
         self.df2 = None
         self.mode = mode.lower()
@@ -47,16 +56,25 @@ class bookstore_app:
         self.df1 = pd.read_csv('data/03_Library Systembook.csv')
         self.df2 = pd.read_csv('data/03_Library SystemCustomers.csv')
 
+        self.metrics['initial_loans'] = len(self.df1)
+        self.metrics['initial_customers'] = len(self.df2)
+
     def duplicateCheck(self):
+        before_loans = len(self.df1)
+        before_customers = len(self.df2)
+
         self.df1 = self.df1.drop_duplicates()
         self.df2 = self.df2.drop_duplicates()
 
-    def naCheck(self):
-        loan_before = len(self.df1)
-        cust_before = len(self.df2)
+        self.metrics['loan_duplicates_removed'] = before_loans - len(self.df1)
+        self.metrics['customer_duplicates_removed'] = before_customers - len(self.df2)
 
+    def naCheck(self):
         self.df1.columns = self.df1.columns.str.strip().str.lower().str.replace(" ", "_")
         self.df2.columns = self.df2.columns.str.strip().str.lower().str.replace(" ", "_")
+
+        self.metrics['na_in_book_checkout'] = self.df1['book_checkout'].isna().sum()
+        self.metrics['na_in_book_returned'] = self.df1['book_returned'].isna().sum()
 
         self.df1 = self.df1.dropna(how='all')
         self.df2 = self.df2.dropna(how='all')
@@ -67,12 +85,6 @@ class bookstore_app:
 
         self.df1 = self.df1.applymap(lambda x: x.strip() if isinstance(x, str) else x)
         self.df2 = self.df2.applymap(lambda x: x.strip() if isinstance(x, str) else x)
-
-        loan_after = len(self.df1)
-        cust_after = len(self.df2)
-
-        self.dropCount += loan_before - loan_after
-        self.customer_drop_count += cust_before - cust_after
 
     def dateCleaner(self):
         self.df1['book_checkout'] = (
@@ -86,11 +98,7 @@ class bookstore_app:
         self.df1['book_checkout'] = pd.to_datetime(self.df1['book_checkout'], format='mixed', errors='coerce')
         self.df1['book_returned'] = pd.to_datetime(self.df1['book_returned'], format='mixed', errors='coerce')
 
-        before_drop = len(self.df1)
         self.df1 = self.df1.dropna(subset=['book_checkout', 'book_returned'])
-        after_drop = len(self.df1)
-
-        self.dropCount += before_drop - after_drop
 
     def dataEnrich(self):
         enriched = self.df1.copy()
@@ -100,13 +108,19 @@ class bookstore_app:
         ).dt.days
 
         valid = enriched[enriched['loan_duration'] >= 0]
-        self.dropCount += len(enriched) - len(valid)
+        
+        invalid_rows = enriched[enriched['loan_duration'] < 0]
+        self.metrics['invalid_loan_duration_count'] = len(invalid_rows)
 
         self.df1 = valid  # Replace with valid records
 
     def saveCleanedFiles(self):
         cleaned_path = "/app/output"
         os.makedirs(cleaned_path, exist_ok=True)
+
+        self.metrics['final_loans'] = len(self.df1)
+        self.metrics['final_customers'] = len(self.df2)
+
         self.df1.to_csv(os.path.join(cleaned_path, "book_cleaned.csv"), index=False)
         self.df2.to_csv(os.path.join(cleaned_path, "customers_cleaned.csv"), index=False)
         print("Cleaning complete. Files saved in 'data/cleaned/'.")
@@ -117,13 +131,9 @@ class bookstore_app:
         print("Data loaded to SQL Server successfully.")
 
     def writeMetricsToSQL(self):
-        metrics = {
-            'Record Loss: Loans': self.dropCount,
-            'Record Loss: Customers': self.customer_drop_count
-        }
-        metrics_df = pd.DataFrame([metrics])
+        metrics_df = pd.DataFrame([self.metrics])
         metrics_df.to_sql('DE_metrics', con=self.engine, if_exists='replace', index=False)
-        print("DE metrics written to SQL.")
+        print("Enhanced DE metrics written to SQL.")
 
 # ---------- Run the pipeline ----------
 if __name__ == "__main__":
